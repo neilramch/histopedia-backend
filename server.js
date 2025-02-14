@@ -1,19 +1,28 @@
 require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Load API Keys
+const GOOGLE_NEWS_API_KEY = process.env.GOOGLE_NEWS_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+// Ensure API keys are loaded
 console.log("Starting server...");
-console.log("OpenAI API Key:", process.env.OPENAI_API_KEY ? "✅ Loaded" : "❌ Not Loaded!");
+console.log("Google News API Key:", GOOGLE_NEWS_API_KEY ? "✅ Loaded" : "❌ Not Loaded!");
+console.log("OpenAI API Key:", OPENAI_API_KEY ? "✅ Loaded" : "❌ Not Loaded!");
 
+// OpenAI setup
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+
+// Chatbot API Route
 app.post("/api/chat", async (req, res) => {
-  console.log("Received request:", req.body);
+  console.log("Received chat request:", req.body);
 
   try {
     const { messages } = req.body;
@@ -35,5 +44,40 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+
+app.get("/api/news", async (req, res) => {
+  console.log("Fetching latest archaeology & historical news...");
+
+  const NEWS_URL = `https://newsapi.org/v2/everything?q="archaeological discovery" OR "ancient civilization" OR "historical artifact" OR "lost city" OR "excavation"&sortBy=publishedAt&language=en&pageSize=20&apiKey=${process.env.GOOGLE_NEWS_API_KEY}`;
+
+  try {
+    const response = await axios.get(NEWS_URL);
+
+    // 🔹 Manually filter results to ensure they're history-related
+    const filteredArticles = response.data.articles.filter(article =>
+      article.title.toLowerCase().includes("archaeology") ||
+      article.title.toLowerCase().includes("ancient") ||
+      article.title.toLowerCase().includes("historical") ||
+      article.title.toLowerCase().includes("artifact") ||
+      article.title.toLowerCase().includes("excavation") ||
+      article.description?.toLowerCase().includes("archaeology") ||
+      article.description?.toLowerCase().includes("ancient") ||
+      article.description?.toLowerCase().includes("historical") ||
+      article.description?.toLowerCase().includes("artifact") ||
+      article.description?.toLowerCase().includes("lost city")
+    );
+
+    console.log("✅ Filtered Articles:", filteredArticles.slice(0, 5));
+    res.json(filteredArticles.slice(0, 5)); // Return only top 5 relevant articles
+  } catch (error) {
+    console.error("❌ Error fetching news:", error.response ? error.response.data : error);
+    res.status(500).json({ error: "Failed to fetch news" });
+  }
+});
+
+
+
+
+// Start Server (Only Once!)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
