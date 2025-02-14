@@ -6,7 +6,16 @@ const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// 🔹 Allow requests from Vercel, Squarespace, AND Localhost (Vite uses port 5173)
+const corsOptions = {
+  origin: ["http://localhost:5173", "https://your-frontend-url.com"], // Add your frontend URL
+  methods: "GET,POST",
+  credentials: true
+};
+
+app.use(cors(corsOptions)); 
+
 
 // Load API Keys
 const GOOGLE_NEWS_API_KEY = process.env.GOOGLE_NEWS_API_KEY;
@@ -20,9 +29,9 @@ console.log("OpenAI API Key:", OPENAI_API_KEY ? "✅ Loaded" : "❌ Not Loaded!"
 // OpenAI setup
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Chatbot API Route
+// 🔹 Chatbot API Route
 app.post("/api/chat", async (req, res) => {
-  console.log("Received chat request:", req.body);
+  console.log("✅ Received chat request:", req.body);
 
   try {
     const { messages } = req.body;
@@ -44,13 +53,14 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-
+// 🔹 News API Route (Only One Definition Now)
 app.get("/api/news", async (req, res) => {
-  console.log("Fetching latest archaeology & historical news...");
+  console.log("✅ Received request at /api/news");
 
-  const NEWS_URL = `https://newsapi.org/v2/everything?q="archaeological discovery" OR "ancient civilization" OR "historical artifact" OR "lost city" OR "excavation"&sortBy=publishedAt&language=en&pageSize=20&apiKey=${process.env.GOOGLE_NEWS_API_KEY}`;
+  const NEWS_URL = `https://newsapi.org/v2/everything?q="archaeological discovery" OR "ancient civilization" OR "historical artifact" OR "lost city" OR "excavation"&sortBy=publishedAt&language=en&pageSize=20&apiKey=${GOOGLE_NEWS_API_KEY}`;
 
   try {
+    console.log("📡 Fetching news from Google News API...");
     const response = await axios.get(NEWS_URL);
 
     // 🔹 Manually filter results to ensure they're history-related
@@ -75,9 +85,6 @@ app.get("/api/news", async (req, res) => {
   }
 });
 
-
-
-
-// Start Server (Only Once!)
+// 🔹 Start Server (Only Once!)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
