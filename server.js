@@ -63,34 +63,30 @@ app.post("/api/chat", async (req, res) => {
 app.get("/api/news", async (req, res) => {
   console.log("Fetching latest archaeology & historical news...");
 
-  const NEWS_URL = `https://newsapi.org/v2/everything?q="archaeological discovery" OR "ancient civilization" OR "historical artifact" OR "lost city" OR "excavation"&sortBy=publishedAt&language=en&pageSize=20&apiKey=${process.env.GOOGLE_NEWS_API_KEY}`;
+  const NEWS_URL = `https://newsapi.org/v2/everything?q="archaeological discovery" OR "ancient civilization" OR "historical artifact" OR "lost city" OR "excavation"&sortBy=publishedAt&language=en&pageSize=50&apiKey=${process.env.GOOGLE_NEWS_API_KEY}`;
 
   try {
-    const response = await axios.get(NEWS_URL);
+    const response = await axios.get(NEWS_URL); // ✅ Ensure response is defined here
 
-    // 🔹 Manually filter results to ensure they're history-related
+    if (!response || !response.data || !response.data.articles) {
+      throw new Error("Invalid API response structure.");
+    }
+
+    console.log("✅ Raw API Response (Before Filtering):", response.data.articles.length);
+
+    // 🔹 Filter for history-related articles
     const filteredArticles = response.data.articles.filter(article =>
-      article.title.toLowerCase().includes("archaeology") ||
-      article.title.toLowerCase().includes("ancient") ||
-      article.title.toLowerCase().includes("historical") ||
-      article.title.toLowerCase().includes("artifact") ||
-      article.title.toLowerCase().includes("excavation") ||
-      article.description?.toLowerCase().includes("archaeology") ||
-      article.description?.toLowerCase().includes("ancient") ||
-      article.description?.toLowerCase().includes("historical") ||
-      article.description?.toLowerCase().includes("artifact") ||
-      article.description?.toLowerCase().includes("lost city")
+      /(archaeolog|ancient|histor|artifact|excavat|lost city)/i.test(article.title) ||
+      /(archaeolog|ancient|histor|artifact|excavat|lost city)/i.test(article.description)
     );
 
-    console.log("✅ Filtered Articles:", filteredArticles.slice(0, 5));
-    res.json(filteredArticles.slice(0, 5)); // Return only top 5 relevant articles
+    console.log("✅ Filtered Articles (After Filtering):", filteredArticles.length);
+    res.json(filteredArticles.slice(0, 5)); // Return top 5 relevant articles
   } catch (error) {
-    console.error("❌ Error fetching news:", error.response ? error.response.data : error);
+    console.error("❌ Error fetching news:", error.message);
     res.status(500).json({ error: "Failed to fetch news" });
   }
 });
-
-
 
 
 // Start Server (Only Once!)
