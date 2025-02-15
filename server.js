@@ -8,8 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const cors = require("cors");
-
 // ✅ Explicitly allow requests from your frontend
 const corsOptions = {
   origin: [
@@ -96,5 +94,5 @@ app.get("/api/news", async (req, res) => {
 
 
 // Start Server (Only Once!)
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
